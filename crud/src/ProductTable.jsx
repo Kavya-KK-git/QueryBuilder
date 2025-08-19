@@ -7,6 +7,7 @@ import ProductDetails from "./ProductDetails";
 import debounce from "lodash.debounce";
 import api from "./axiosInstance";
 import { socket } from "./socket";
+import QueryBuilder from "./Qbuilder";
 
 const ProductTable = ({ handleDelete, handleEdit }) => {
   const gridApi = useRef();
@@ -155,6 +156,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
 
   return (
     <div className="flex justify-center mt-5">
+      <QueryBuilder />
       <div style={{ width: 900, height: 400 }}>
         <div className="border m-5 mr-122 rounded-1xl">
           <input
