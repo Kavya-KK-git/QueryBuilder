@@ -238,7 +238,7 @@ import { Delete } from "@mui/icons-material";
 const fields = [
   { value: "name", label: "Name", type: "string" },
   { value: "category", label: "Category", type: "string" },
-  { value: "date", label: "Date", type: "date" },
+  { value: "mfd", label: "Date", type: "date" },
   { value: "mrp", label: "MRP", type: "number" },
 ];
 
@@ -289,7 +289,6 @@ export default function QueryBuilder({ onApply }) {
   const handleApply = () => {
     onApply({ conditions, logic });
   };
-
   return (
     <Box p={2} sx={{ border: "1px solid #ccc", borderRadius: 2 }}>
       <Typography variant="h6" gutterBottom>

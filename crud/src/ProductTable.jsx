@@ -15,6 +15,8 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
   const quickFilterRef = useRef("");
   const [quickFilter, setQuickFilter] = useState("");
 
+  const [qbFilter, setQbFilter] = useState(null);
+
   const columnDefs = [
     {
       field: "name",
@@ -94,6 +96,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
                 convertFilterDatesToUTC(params?.request?.filterModel)
               ) || "{}",
             quickFilter: quickFilterRef.current || "",
+            qbFilter: JSON.stringify(qbFilter || { conditions: [] }),
           })
           .then((res) => {
             console.log(res);
@@ -108,7 +111,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
           });
       },
     }),
-    []
+    [qbFilter]
   );
 
   const updateQuickFilter = useCallback(
@@ -123,6 +126,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
   );
 
   const onGridReady = (params) => {
+    gridApi.current = params.api;
     // console.log("grid is ready");
     socket.on("productAdded", () => {
       if (gridApi.current) {
@@ -156,7 +160,14 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
 
   return (
     <div className="flex justify-center mt-5">
-      <QueryBuilder />
+      <QueryBuilder
+        onApply={(q) => {
+          setQbFilter(q);
+          if (gridApi.current) {
+            gridApi.current.setGridOption("serverSideDatasource", datasource);
+          }
+        }}
+      />
       <div style={{ width: 900, height: 400 }}>
         <div className="border m-5 mr-122 rounded-1xl">
           <input
