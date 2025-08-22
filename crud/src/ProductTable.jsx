@@ -1,4 +1,10 @@
-import React, { useRef, useState, useMemo, useCallback } from "react";
+import React, {
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import { AgGridReact } from "ag-grid-react";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
@@ -7,12 +13,15 @@ import ProductDetails from "./ProductDetails";
 import debounce from "lodash.debounce";
 import api from "./axiosInstance";
 import { socket } from "./socket";
+import QueryBuilder from "./Qbuilder";
 
 const ProductTable = ({ handleDelete, handleEdit }) => {
   const gridApi = useRef();
 
   const quickFilterRef = useRef("");
   const [quickFilter, setQuickFilter] = useState("");
+
+  const [qbFilter, setQbFilter] = useState(null);
 
   const columnDefs = [
     {
@@ -93,6 +102,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
                 convertFilterDatesToUTC(params?.request?.filterModel)
               ) || "{}",
             quickFilter: quickFilterRef.current || "",
+            qbFilter: JSON.stringify(qbFilter || { conditions: [] }),
           })
           .then((res) => {
             console.log(res);
@@ -107,9 +117,13 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
           });
       },
     }),
-    []
+    [qbFilter]
   );
-
+  useEffect(() => {
+    if (gridApi.current) {
+      gridApi.current.setGridOption("serverSideDatasource", datasource);
+    }
+  }, [qbFilter, datasource]);
   const updateQuickFilter = useCallback(
     debounce((value) => {
       quickFilterRef.current = value;
@@ -122,6 +136,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
   );
 
   const onGridReady = (params) => {
+    gridApi.current = params.api;
     // console.log("grid is ready");
     socket.on("productAdded", () => {
       if (gridApi.current) {
@@ -154,9 +169,22 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
   };
 
   return (
-    <div className="flex justify-center mt-5">
+    <div className="flex flex-col items-center justify-start min-h-screen p-6">
+      <QueryBuilder onApply={(q) => setQbFilter(q)} />
+      <div className="border m-5 mr-15 rounded-1xl flex flex-col items-center ">
+        <input
+          type="text"
+          id="filter-text-box"
+          placeholder=" Filter..."
+          value={quickFilter}
+          onChange={(e) => {
+            setQuickFilter(e.target.value);
+            updateQuickFilter(e.target.value);
+          }}
+        />
+      </div>
       <div style={{ width: 900, height: 400 }}>
-        <div className="border m-5 mr-122 rounded-1xl">
+        {/* <div className="border m-5 mr-122 rounded-1xl ">
           <input
             type="text"
             id="filter-text-box"
@@ -167,7 +195,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
               updateQuickFilter(e.target.value);
             }}
           />
-        </div>
+        </div> */}
 
         <AgGridReact
           masterDetail={true}

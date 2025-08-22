@@ -7,6 +7,7 @@ const handleGet = async (req, res) => {
       endRow = 100,
       sortModel = "[]",
       filterModel = "{}",
+      qbFilter = "{}",
     } = req?.body;
     const start = parseInt(startRow) || 0;
     const limit = parseInt(endRow) - start || 100;
@@ -82,6 +83,95 @@ const handleGet = async (req, res) => {
         }
       }
     });
+
+    let qbFilterParsed = {};
+    try {
+      qbFilterParsed = JSON.parse(qbFilter);
+    } catch (e) {
+      qbFilterParsed = { conditions: [] };
+    }
+
+    if (qbFilterParsed.conditions?.length > 0) {
+      const qbConditions =
+        qbFilterParsed.conditions
+          ?.map((c) => {
+            if (
+              c.field &&
+              c.operator &&
+              c.value !== undefined &&
+              c.value !== ""
+            ) {
+              switch (c.operator) {
+                case "contains":
+                  return { [c.field]: { $regex: c.value, $options: "i" } };
+                case "does not contain":
+                  return {
+                    [c.field]: { $not: { $regex: c.value, $options: "i" } },
+                  };
+                case "equals":
+                  return { [c.field]: { $eq: c.value } };
+                case "not equals":
+                  return { [c.field]: { $ne: c.value } };
+                case "starts with":
+                  return {
+                    [c.field]: { $regex: `^${c.value}`, $options: "i" },
+                  };
+                case "ends with":
+                  return {
+                    [c.field]: { $regex: `${c.value}$`, $options: "i" },
+                  };
+                case "greater than":
+                  return { [c.field]: { $gt: parseInt(c.value) } };
+                case "greater than or equal":
+                  return { [c.field]: { $gte: parseInt(c.value) } };
+                case "less than":
+                  return { [c.field]: { $lt: parseInt(c.value) } };
+                case "less than or equal":
+                  return { [c.field]: { $lte: parseInt(c.value) } };
+                case "range":
+                  if (Array.isArray(c.value) && c.value.length === 2) {
+                    return {
+                      [c.field]: {
+                        $gt: parseInt(c.value[0]),
+                        $lt: parseInt(c.value[1]),
+                      },
+                    };
+                  }
+                case "before":
+                  return { [c.field]: { $lt: new Date(c.value) } };
+                case "after":
+                  return { [c.field]: { $gt: new Date(c.value) } };
+                case "on":
+                  const startDay = new Date(c.value);
+                  const endDay = new Date(startDay);
+                  endDay.setUTCDate(endDay.getUTCDate() + 1);
+                  return { [c.field]: { $gte: startDay, $lt: endDay } };
+                case "between":
+                  if (Array.isArray(c.value) && c.value.length === 2) {
+                    return {
+                      [c.field]: {
+                        $gte: new Date(c.value[0]),
+                        $lte: new Date(c.value[1]),
+                      },
+                    };
+                  }
+                  return null;
+                default:
+                  return null;
+              }
+            }
+            return null;
+          })
+          .filter(Boolean) || [];
+
+      if (qbConditions.length > 0) {
+        if (qbFilterParsed.logic === "OR") {
+          filterObj.$or = [...(filterObj.$or || []), ...qbConditions];
+        } else {
+          filterObj.$and = [...(filterObj.$and || []), ...qbConditions];
+        }
+      }
+    }
 
     const products = await Product.find(filterObj)
       .sort(sortObj)
