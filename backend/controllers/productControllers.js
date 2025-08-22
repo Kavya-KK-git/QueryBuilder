@@ -109,7 +109,7 @@ const handleGet = async (req, res) => {
                     [c.field]: { $not: { $regex: c.value, $options: "i" } },
                   };
                 case "equals":
-                  return { [c.field]: c.value };
+                  return { [c.field]: { $eq: c.value } };
                 case "not equals":
                   return { [c.field]: { $ne: c.value } };
                 case "starts with":

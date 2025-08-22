@@ -1,4 +1,10 @@
-import React, { useRef, useState, useMemo, useCallback } from "react";
+import React, {
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import { AgGridReact } from "ag-grid-react";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditIcon from "@mui/icons-material/Edit";
@@ -113,7 +119,11 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
     }),
     [qbFilter]
   );
-
+  useEffect(() => {
+    if (gridApi.current) {
+      gridApi.current.setGridOption("serverSideDatasource", datasource);
+    }
+  }, [qbFilter, datasource]);
   const updateQuickFilter = useCallback(
     debounce((value) => {
       quickFilterRef.current = value;
@@ -160,14 +170,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
 
   return (
     <div className="flex justify-center mt-5">
-      <QueryBuilder
-        onApply={(q) => {
-          setQbFilter(q);
-          if (gridApi.current) {
-            gridApi.current.setGridOption("serverSideDatasource", datasource);
-          }
-        }}
-      />
+      <QueryBuilder onApply={(q) => setQbFilter(q)} />
       <div style={{ width: 900, height: 400 }}>
         <div className="border m-5 mr-122 rounded-1xl">
           <input
