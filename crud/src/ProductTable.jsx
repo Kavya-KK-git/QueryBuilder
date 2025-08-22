@@ -159,7 +159,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
   };
 
   return (
-    <div className="flex justify-center mt-5">
+    <div className="flex flex-col items-center justify-start min-h-screen p-6">
       <QueryBuilder
         onApply={(q) => {
           setQbFilter(q);
@@ -168,8 +168,20 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
           }
         }}
       />
+      <div className="border m-5 mr-15 rounded-1xl flex flex-col items-center ">
+        <input
+          type="text"
+          id="filter-text-box"
+          placeholder=" Filter..."
+          value={quickFilter}
+          onChange={(e) => {
+            setQuickFilter(e.target.value);
+            updateQuickFilter(e.target.value);
+          }}
+        />
+      </div>
       <div style={{ width: 900, height: 400 }}>
-        <div className="border m-5 mr-122 rounded-1xl">
+        {/* <div className="border m-5 mr-122 rounded-1xl ">
           <input
             type="text"
             id="filter-text-box"
@@ -180,7 +192,7 @@ const ProductTable = ({ handleDelete, handleEdit }) => {
               updateQuickFilter(e.target.value);
             }}
           />
-        </div>
+        </div> */}
 
         <AgGridReact
           masterDetail={true}
