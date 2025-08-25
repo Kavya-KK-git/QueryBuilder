@@ -13,12 +13,13 @@ import {
   ToggleButtonGroup,
 } from "@mui/material";
 import { Delete } from "@mui/icons-material";
+import dayjs from "dayjs";
 
 const fields = [
-  { value: "name", label: "Name", type: "string" },
-  { value: "category", label: "Category", type: "string" },
-  { value: "mfd", label: "Date", type: "date" },
-  { value: "mrp", label: "MRP", type: "number" },
+  { value: "name", label: "Name" },
+  { value: "category", label: "Category" },
+  { value: "mfd", label: "Date" },
+  { value: "mrp", label: "MRP" },
 ];
 
 const operators = {
@@ -32,15 +33,30 @@ const operators = {
   ],
   number: [
     "equals",
-    "Not equals",
+    "not equals",
     "greater than",
     "greater than or equal",
     "lesser than",
-    "lesser than  or equal",
+    "lesser than or equal",
     "range",
   ],
   date: ["before", "after", "on", "between"],
 };
+
+function detectType(value, field) {
+  if (field === "mrp") return "number";
+  if (field === "mfd") return "date";
+
+  if (Array.isArray(value)) {
+    if (dayjs(value[0], "YYYY-MM-DD", true).isValid()) return "date";
+    if (!isNaN(Number(value[0]))) return "number";
+  }
+
+  if (dayjs(value, "YYYY-MM-DD", true).isValid()) return "date";
+  if (!isNaN(Number(value)) && value !== "") return "number";
+
+  return "string";
+}
 
 export default function QueryBuilder({ onApply }) {
   const [conditions, setConditions] = useState([]);
@@ -52,6 +68,11 @@ export default function QueryBuilder({ onApply }) {
 
   const updateCondition = (index, key, value) => {
     const updated = [...conditions];
+
+    if (key === "value" && updated[index].field === "mrp") {
+      if (Number(value) < 0) return;
+    }
+
     updated[index][key] = value;
 
     if (key === "field") {
@@ -68,6 +89,7 @@ export default function QueryBuilder({ onApply }) {
   const handleApply = () => {
     onApply({ conditions, logic });
   };
+
   return (
     <Box p={5} mr={6} sx={{ border: "1px solid #ccc", borderRadius: 2 }}>
       <Typography variant="h6" gutterBottom>
@@ -75,8 +97,7 @@ export default function QueryBuilder({ onApply }) {
       </Typography>
 
       {conditions.map((cond, index) => {
-        const fieldType =
-          fields.find((f) => f.value === cond.field)?.type || "";
+        const fieldType = detectType(cond.value, cond.field);
 
         return (
           <Box key={index} display="flex" alignItems="center" gap={2} mb={2}>
@@ -106,59 +127,54 @@ export default function QueryBuilder({ onApply }) {
                   updateCondition(index, "operator", e.target.value)
                 }
               >
-                {fieldType &&
-                  operators[fieldType].map((op) => (
-                    <MenuItem key={op} value={op}>
-                      {op}
-                    </MenuItem>
-                  ))}
+                {operators[fieldType].map((op) => (
+                  <MenuItem key={op} value={op}>
+                    {op}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
 
-            {(fieldType === "date" && cond.operator === "between") ||
-            (fieldType === "number" &&
-              cond.operator.toLowerCase() === "range") ? (
+            {cond.operator === "between" ||
+            cond.operator.toLowerCase() === "range" ? (
               <Box display="flex" gap={1}>
                 <TextField
                   type={fieldType === "date" ? "date" : "number"}
-                  value={cond.value?.[0] || ""}
-                  onChange={(e) => {
-                    const val =
-                      fieldType === "number"
-                        ? Math.max(0, Number(e.target.value))
-                        : e.target.value;
-                    updateCondition(index, "value", [val, cond.value?.[1]]);
-                  }}
+                  inputProps={fieldType === "number" ? { min: 0 } : {}}
+                  value={Array.isArray(cond.value) ? cond.value[0] : ""}
+                  onChange={(e) =>
+                    updateCondition(index, "value", [
+                      e.target.value,
+                      cond.value?.[1],
+                    ])
+                  }
                 />
                 <TextField
                   type={fieldType === "date" ? "date" : "number"}
-                  value={cond.value?.[1] || ""}
-                  onChange={(e) => {
-                    const val =
-                      fieldType === "number"
-                        ? Math.max(0, Number(e.target.value))
-                        : e.target.value;
-                    updateCondition(index, "value", [cond.value?.[0], val]);
-                  }}
+                  inputProps={fieldType === "number" ? { min: 0 } : {}}
+                  value={Array.isArray(cond.value) ? cond.value[1] : ""}
+                  onChange={(e) =>
+                    updateCondition(index, "value", [
+                      cond.value?.[0],
+                      e.target.value,
+                    ])
+                  }
                 />
               </Box>
             ) : (
               <TextField
                 type={
-                  fieldType === "number"
-                    ? "number"
-                    : fieldType === "date"
+                  fieldType === "date"
                     ? "date"
+                    : fieldType === "number"
+                    ? "number"
                     : "text"
                 }
+                inputProps={fieldType === "number" ? { min: 0 } : {}}
                 value={cond.value}
-                onChange={(e) => {
-                  const val =
-                    fieldType === "number"
-                      ? Math.max(0, Number(e.target.value))
-                      : e.target.value;
-                  updateCondition(index, "value", val);
-                }}
+                onChange={(e) =>
+                  updateCondition(index, "value", e.target.value)
+                }
               />
             )}
 

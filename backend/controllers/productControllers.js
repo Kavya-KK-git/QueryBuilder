@@ -1,4 +1,5 @@
 const Product = require("../models/productModels");
+const { parseValue } = require("../utils/typeOfValue");
 
 const handleGet = async (req, res) => {
   try {
@@ -101,48 +102,50 @@ const handleGet = async (req, res) => {
               c.value !== undefined &&
               c.value !== ""
             ) {
+              const parsedValue = parseValue(c.value);
+
               switch (c.operator) {
                 case "contains":
-                  return { [c.field]: { $regex: c.value, $options: "i" } };
+                  return { [c.field]: { $regex: parsedValue, $options: "i" } };
                 case "does not contain":
                   return {
-                    [c.field]: { $not: { $regex: c.value, $options: "i" } },
+                    [c.field]: { $not: { $regex: parsedValue, $options: "i" } },
                   };
                 case "equals":
-                  return { [c.field]: { $eq: c.value } };
+                  return { [c.field]: { $eq: parsedValue } };
                 case "not equals":
-                  return { [c.field]: { $ne: c.value } };
+                  return { [c.field]: { $ne: parsedValue } };
                 case "starts with":
                   return {
-                    [c.field]: { $regex: `^${c.value}`, $options: "i" },
+                    [c.field]: { $regex: `^${parsedValue}`, $options: "i" },
                   };
                 case "ends with":
                   return {
-                    [c.field]: { $regex: `${c.value}$`, $options: "i" },
+                    [c.field]: { $regex: `${parsedValue}$`, $options: "i" },
                   };
                 case "greater than":
-                  return { [c.field]: { $gt: parseInt(c.value) } };
+                  return { [c.field]: { $gt: parsedValue } };
                 case "greater than or equal":
-                  return { [c.field]: { $gte: parseInt(c.value) } };
-                case "less than":
-                  return { [c.field]: { $lt: parseInt(c.value) } };
-                case "less than or equal":
-                  return { [c.field]: { $lte: parseInt(c.value) } };
+                  return { [c.field]: { $gte: parsedValue } };
+                case "lesser than":
+                  return { [c.field]: { $lt: parsedValue } };
+                case "lesser than or equal":
+                  return { [c.field]: { $lte: parsedValue } };
                 case "range":
                   if (Array.isArray(c.value) && c.value.length === 2) {
                     return {
                       [c.field]: {
-                        $gt: parseInt(c.value[0]),
-                        $lt: parseInt(c.value[1]),
+                        $gt: parseValue(c.value[0]),
+                        $lt: parseValue(c.value[1]),
                       },
                     };
                   }
                 case "before":
-                  return { [c.field]: { $lt: new Date(c.value) } };
+                  return { [c.field]: { $lt: parsedValue } };
                 case "after":
-                  return { [c.field]: { $gt: new Date(c.value) } };
+                  return { [c.field]: { $gt: parsedValue } };
                 case "on":
-                  const startDay = new Date(c.value);
+                  const startDay = parseValue(c.value);
                   const endDay = new Date(startDay);
                   endDay.setUTCDate(endDay.getUTCDate() + 1);
                   return { [c.field]: { $gte: startDay, $lt: endDay } };
@@ -150,8 +153,8 @@ const handleGet = async (req, res) => {
                   if (Array.isArray(c.value) && c.value.length === 2) {
                     return {
                       [c.field]: {
-                        $gte: new Date(c.value[0]),
-                        $lte: new Date(c.value[1]),
+                        $gte: parseValue(c.value[0]),
+                        $lte: parseValue(c.value[1]),
                       },
                     };
                   }
